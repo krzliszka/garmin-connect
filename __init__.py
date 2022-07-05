@@ -347,8 +347,8 @@ class Garmin:
 
         response = self.modern_rest_client.get("", params=params)
 
-        user_preferences = self.__get_json(response.text, "VIEWER_USERPREFERENCES"
-        self.display_name = user_preferences["displayName"])
+        user_preferences = self.__get_json(response.text, "VIEWER_USERPREFERENCES")
+        self.display_name = user_preferences["displayName"]
         logger.debug("Display name is %s", self.display_name)
 
         self.unit_system = user_preferences["measurementSystem"]
@@ -380,6 +380,119 @@ class Garmin:
 
         return self.unit_system
 
+
+    def get_stats(self, cdate: str) -> Dict[str, Any]:
+        """
+        Return user activity summary for 'cdate' format 'YYYY-MM-DD' which is compatible with Garmin  Connect
+        """
+
+        return self.get_user_summary(cdate)
+
+    
+    def get_user_summary(self, cdate: str) -> Dict[str, Any]:
+        """
+        
+        """
+
+        url = f"{self.garmin_connect_daily_summary_url}/{self.display_name}"
+        params = {
+            "calendarDate": str(cdate)
+        }
+
+        logger.debug('Requesting user summary')
+
+        response = self.modern_rest_client.get(url, params=params).json()
+
+        if response['privacyProtected'] is True:
+            raise  GarminConnectAuthenticationError("Authentication error")
+
+        return response
+
+
+    def get_steps_data(self, cdate):
+        """
+        """
+
+        url = f"{self.garmin_connect_user_summary_chart}/{self.display_name}"
+        params = {
+            'date': str(cdate)
+        }
+
+        logger.debug("Requesting steps data")
+
+        return self.modern_rest_client.get(url, params=params).json()
+
+
+    def get_heart_rate(self, cdate):
+        """
+        """
+
+        url = f"{self.garmin_connect_heartrates_daily_url}/{self.display_name}"
+        params = {
+            'date': str(cdate)
+        }
+
+        logger.debug('Requesting heart rate data.')
+
+        return self.modern_rest_client.get(url, params=params).json()
+
+
+    def get_stats_and_body(self, cdate):
+        """
+        """
+
+        return {
+            **self.get_stats(cdate),
+            **self.get_body_composition(cdate)['totalAverage']
+        }
+
+
+    def get_body_composition(self, start_date: str, end_date=None) -> Dict[str, Any]:
+        """
+        """
+
+        if end_date is None:
+            end_date = start_date
+        
+        url = self.garmin_connect_weight_url
+        params = {
+            "startDate": str(start_date),
+            "endDate": str(end_date)
+        }
+
+        logger.debug('Requesting body composition.')
+
+        return self.modern_rest_client.get(url, params=params).json()
+
+
+    def get_max_metrics(self, cdate: str) -> Dict[str, Any]:
+        """"
+        """
+
+        url = f"{self.garmin_connect_metrics_url}/{cdate}/{cdate}"
+        logger.debug('Requesting max metrics.')
+
+        return self.modern_rest_client.get(url).json()
+
+
+    def get_hydration_data(self, cdate: str) -> Dict[str, Any]:
+        """
+        """
+
+        url = f"{self.garmin_connect_daily_hydration_url}/{cdate}"
+        logger.debug('Requesting hydration data.')
+
+        return self.modern_rest_client.get(url).json()
+
+
+    def get_resspiration_data(self, cdate: str) -> Dict[str, Any]:
+        """
+        """
+
+        url = f"{self.garmin_connect_daily_respiration_url}/{cdate}"
+        logger.debug('Requesting respiration data.')
+
+        return self.modern_rest_client.get(url).json()
 
 
 
