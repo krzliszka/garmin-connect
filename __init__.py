@@ -485,7 +485,7 @@ class Garmin:
         return self.modern_rest_client.get(url).json()
 
 
-    def get_resspiration_data(self, cdate: str) -> Dict[str, Any]:
+    def get_respiration_data(self, cdate: str) -> Dict[str, Any]:
         """
         """
 
