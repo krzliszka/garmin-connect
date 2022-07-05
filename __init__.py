@@ -265,11 +265,120 @@ class Garmin:
 
 
     def authenticate(self):
+        # TODO add better description
+        """
+        Login to Garmin Connect.
+        """
+
+        logger.debug("Login: %s %s", self.username, self.password)
+        self.modern_rest_client.clear_cookies()
+        self.sso_rest_client.clear_cookies()
+
+        get_headers = {
+            "Referer": self.garmin_connect_login_url
+        }
+        params = {
+            "service": self.modern_rest_client.url(),
+            "webhost": self.garmin_connect_base_url,
+            "source": self.garmin_connect_login_url,
+            "redirectAfterAccountLoginUrl": self.modern_rest_client.url(),
+            "redirectAfterAccountCreationUrl": self.modern_rest_client.url(),
+            "gauthHost": self.sso_rest_client.url(),
+            "locale": "en_US",
+            "id": "gauth-widget",
+            "cssUrl": self.garmin_connect_css_url,
+            "privacyStatementUrl": "//connect.garmin.com/en-US/privacy/",
+            "clientId": "GarminConnect",
+            "rememberMeShown": "true",
+            "rememberMeChecked": "false",
+            "createAccountShown": "true",
+            "openCreateAccount": "false",
+            "displayNameShown": "false",
+            "consumeServiceTicket": "false",
+            "initialFocus": "true",
+            "embedWidget": "false",
+            "generateExtraServiceTicket": "true",
+            "generateTwoExtraServiceTickets": "false",
+            "generateNoServiceTicket": "false",
+            "globalOptInShown": "true",
+            "globalOptInChecked": "false",
+            "mobile": "false",
+            "connectLegalTerms": "true",
+            "locationPromptShown": "true",
+            "showPassword": "true"
+        }
+
+        if self.is_cn:
+            params["cssUrl"] = "https://static.garmincdn.cn/cn.garmin.connect/ui/css/gauth-custom-v1.2-min.css"
+
+        response = self.sso_rest_client.get(self.garmin_connect_sso_login, get_headers, params)
+
+        found = re.search(r"name=\"_csrf\" value=\"(\w*)", response.text, re.M)
+        if not found:
+            logger.error("_csrf not found (%d)", response.status_code)
+            return False
+
+        csrf = found.group(1)
+        referer = response.url
+        logger.debug("_csrf found: %s", csrf)
+        logger.debug("Referer: %s", referer)
+
+        data = {
+            "username": self.username,
+            "password": self.password,
+            "embed": "false",
+            "_csrf": csrf
+        }
+        
+        post_headers = {
+            "Referer": referer,
+            "Content Type": "application/x-www-form-urlencoded"
+        }
+
+        response = self.sso_rest_client.post(self.garmin_connect_sso_login, post_headers, params, data)
+        found = re.search(r"\?ticket=([\w-]*)", response.text, re.M)
+        if not found:
+            logger.error("Login ticket not found (%d).", response.status_code)
+            return False
+        
+        params = {
+            "ticket": found.group(1)
+        }
+
+        response = self.modern_rest_client.get("", params=params)
+
+        user_preferences = self.__get_json(response.text, "VIEWER_USERPREFERENCES"
+        self.display_name = user_preferences["displayName"])
+        logger.debug("Display name is %s", self.display_name)
+
+        self.unit_system = user_preferences["measurementSystem"]
+        logger.debug("Unit system is %s", self.unit_system)
+
+        social_profile = self.__get_json(response.text, "VIEWER_SOCIAL_PROFILE")
+        self.full_name = social_profile["fullName"]
+        logger.debug("Fullname is %s", self.full_name)
+
+        self.session_data = {
+            'display_name': self.display_name,
+            'session_cookies': requests.utils.dict_from_cookiejar(self.modern_rest_client.get_cookies()),
+            'login_cookies': requests.utils.dict_from_cookiejar(self.sso_rest_client.get_cookies())
+        }
+
+        return True
+
+    def get_full_name(self):
         """
         
         """
 
-        pass
+        return self.full_name
+
+
+    def get_unit_system(self):
+        """
+        """
+
+        return self.unit_system
 
 
 
