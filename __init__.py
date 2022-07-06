@@ -707,16 +707,121 @@ class Garmin:
 
         return activities
 
-class ActivityDownloadFormat(Enum):
-    """
-    """
+    class ActivityDownloadFormat(Enum):
+        """
+        """
 
-    ORIGINAL = auto()
-    TCX = auto()
-    GPX = auto()
-    KML = auto()
-    CSV = auto()
-    
+        ORIGINAL = auto()
+        TCX = auto()
+        GPX = auto()
+        KML = auto()
+        CSV = auto()
+
+    def download_activity(self, activity_id, dl_fmt=ActivityDownloadFormat.TCX):
+        """
+        
+        """
+
+
+        activity_id = str(activity_id)
+
+        urls = {
+            Garmin.ActivityDownloadFormat.ORIGINAL: f"{self.garmin_connect_fit_download}/{activity_id}",
+            Garmin.ActivityDownloadFormat.TCX: f"{self.garmin_connect_tcx_download}/{activity_id}",
+            Garmin.ActivityDownloadFormat.GPX: f"{self.garmin_connect_gpx_download}/{activity_id}",
+            Garmin.ActivityDownloadFormat.KML: f"{self.garmin_connect_kml_download}/{activity_id}",
+            Garmin.ActivityDownloadFormat.CSV: f"{self.garmin_connect_csv_download}/{activity_id}"
+        }
+
+        if dl_fmt not in urls:
+            raise ValueError(f"Unexpected value {dl_fmt} for dl_fmt.")
+        url = urls[dl_fmt]
+
+        logger.debug("Downloading activities from %s", url)
+
+        return self.modern_rest_client.get(url).content
+
+
+    def get_activity_splits(self, activity_id):
+        """
+        Return activity splits.
+        """
+
+        activity_id = str(activity_id)
+        url = f"{self.garmin_connect_activity}/{activity_id}/splits"
+        logger.debug("Requesting splits for activity ID %s", activity_id)
+
+        return self.modern_rest_client.get(url).json()
+
+
+    def get_activity_split_summaries(self, activity_id):
+        """
+        """
+
+        activity_id = str(activity_id)
+        url = f"{self.garmin_connect_activity}/{activity_id}/split_summaries"
+        logger.debug("Requesting split summaries for activity ID %s", activity_id)
+
+        return self.modern_rest_client.get(url).json()
+
+
+    def get_activity_weather(self, activity_id):
+        """
+        
+        """
+
+        activity_id = str(activity_id)
+        url = f"{self.garmin_connect_activity}/{activity_id}/weather"
+        logger.debug("Requesting weather for activity ID %s", activity_id)
+
+        return self.modern_rest_client.get(url).json()
+
+
+    def get_activity_hr_timezones(self, activity_id):
+        """
+        Return activity heart rate timezones.
+        """
+
+        activity_id = str(activity_id)
+        url = f"{self.garmin_connect_activity}/{activity_id}/hrTimeInZones"
+        logger.debug("Requesting split summaries for activity ID %s", activity_id)
+
+        return self.modern_rest_client.get(url).json()
+
+
+    def get_activity_evaluation(self, activity_id):
+        """
+        """
+
+        activity_id = str(activity_id)
+        url = f"{self.garmin_connect_activity}/{activity_id}"
+        logger.debug("Requesting self-evaluation data for activity ID %s", activity_id)
+
+        return self.modern_rest_client.get(url).json()
+
+
+    def get_activity_details(self, activity_id, max_chart=2000, max_poly=4000):
+        """
+        """
+
+        activity_id = str(activity_id)
+        params = {
+            "maxChartSize": str(max_chart),
+            "maxPolylineSize": str(max_poly)
+        }
+
+        url = self.garmin_connect_gear
+        logger.debug("Requesting gear for activity ID %s", activity_id)
+
+        return self.modern_rest_client.get(url, params=params).json()
+
+
+    def logout(self):
+        """
+        """
+
+        self.modern_rest_client.get(self.garmin_connect_logout)
+
 
 class GarminConnectConnectionError(Exception):
     # TODO add description
