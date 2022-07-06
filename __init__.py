@@ -495,8 +495,228 @@ class Garmin:
         return self.modern_rest_client.get(url).json()
 
 
+    def get_spo2_data(self, cdate: str) -> Dict[str, Any]:
+        """
+        """
+
+        url = f"{self.garmin_connect_daily_spo2_url}/{cdate}"
+        logger.debug('Requesting SpO2 data')
+
+        return self.modern_rest_client.get(url).json()
 
 
+    def get_personal_record(self) -> Dict[str, Any]:
+        """
+        """
+
+        url = f"{self.garmin_connect_personal_record_url}/{self.display_name}"
+        logger.debug('Requesting personal records for user.')
+
+        return self.modern_rest_client.get(url).json()
+
+
+    def get_earned_badges(self) -> Dict[str, Any]:
+        """
+        """
+
+        url = self.garmin_connect_earned_badges_url
+        logger.debug('Requesting earned badges for user.')
+
+        return self.modern_rest_client.get(url).json()
+
+
+    def get_adhoc_challenges(self, start, limit) -> Dict[str, Any]:
+        """
+        """
+
+        url = self.garmin_connect_adhoc_challenges_url
+        params = {
+            "start": str(start),
+            "limit": str(limit)
+        }
+
+        logger.debug('Requesting adhoc challenges for user.')
+
+        return self.modern_rest_client.get(url, params=params).json()
+
+
+    def get_badge_challenges(self, start, limit) -> Dict[str, Any]:
+        """
+        """
+
+        url = self.garmin_connect_badge_challenges_url
+        params = {
+            "start": str(start),
+            "limit": str(limit)
+        }
+        logger.debug('Requesting badge challenges for user.')
+
+        return self.modern_rest_client.get(url, params=params).json()
+
+
+
+    def get_sleep_data(self, cdate: str) -> Dict[str, Any]:
+        """
+        """
+
+        url = f"{self.garmin_connect_daily_sleep_url}/{self.display_name}"
+        params = {
+            "date": str(cdate),
+            "nonSleepBufferMinutes": 60
+        }
+        logger.debug('Requesting sleep data.')
+
+        return self.modern_rest_client.get(url, params=params).json()
+
+
+    def get_stress_data(self, cdate: str) ->  Dict[str,Any]:
+        """
+        """
+
+        url = f"{self.garmin_connect_daily_stress_url}/{self.display_name}"
+        logger.debug('Requesting stress data.')
+
+        return self.modern_rest_client.get(url).json()
+
+
+    def get_rhr_day(self, cdate: str) -> Dict[str, Any]:
+        """
+        Request resting heart rate (RHR) day data
+        """
+
+        url = f"{self.garmin_connect_rhr}/{self.display_name}"
+        params = {
+            "fromDate": str(cdate),
+            "untilDate": str(cdate),
+            "metricId": 60
+        }
+        logger.debug('Requesting resting heart rate data.')
+
+        return self.modern_rest_client.get(url, params=params).json()
+
+
+    def get_devices(self) -> Dict[str, Any]:
+        """
+        
+        """
+
+        url = self.garmin_connect_devices_url
+        logger.debug('Requesting devices.')
+
+        return self.modern_rest_client.get(url).json()
+
+
+    def get_device_settings(self, device_id: str) -> Dict[str, Any]:
+        """
+        """
+
+        url = f"{self.garmin_connect_device_url}/device-info/settings/{device_id}"
+        logger.debug('Requesting device settings')
+
+        return self.modern_rest_client.get(url).json()
+
+
+    def get_device_alarms(self) -> Dict[str, Any]:
+        """
+        """
+
+        logger.debug("Requesting device alarms.")
+
+        alarms = []
+        devices = self.get_devices()
+        for device in devices:
+            device_settings = self.get_device_settings(device["deviceId"])
+            alarms += device_settings["alarms"]
+        return alarms
+
+
+    def get_last_used_device(self):
+        """
+        """
+
+        url = f"{self.garmin_connect_device_url}/mylastused"
+        logger.debug("Requesting last used device.")
+
+        return self.modern_rest_client.get(url).json()
+
+
+    def get_activities(self, start, limit):
+        """
+        """
+
+        url = self.garmin_connect_activities
+        params = {
+            "start": str(start),
+            "limit": str(limit)
+        }
+
+        logger.debug("Requesting activities.")
+
+        return self.modern_rest_client.get(url, params=params).json()
+
+
+    def get_last_activity(self):
+        """
+        """
+
+        activities = self.get_activities(0, 1)
+        if activities:
+            return activities[-1]
+
+        return None
+
+
+    def get_activities_by_date(self, start_date, end_date, activity_type=None):
+        """
+        Fetch available activities between specific dates
+        :param start_date: String in the format YYYY-MM-DD
+        :param end_date: String in the format YYYY-MM-DD
+        :param activity_type: (Optional) Type of activity you are searching.
+                               Possible values are [cycling, running, swimmin, multi_sport, fitness_equipment, hiking, walking, other]
+        :return: list of JSON activities
+        """
+
+        activities = []
+        start = 0
+        limit = 20
+
+        # mimicking the behavior of the web interface that fetches 20 activities at a time and automatically loads more on scroll
+
+        url = self.garmin_connect_activities
+        params = {
+            "startDate": str(start_date),
+            "endDate": str(end_date),
+            "start": str(start),
+            "limit": str(limit)
+        }
+
+        if activity_type:
+            params["activityType"] = str(activity_type)
+
+        print(f"Requesting activities by date from {start_date} to {end_date}.")
+
+        while True:
+            params["start"] = str(start)
+            logger.debug(f"Requesting activities {start} to {start+limit}.")
+            act = self.modern_rest_client.get(url, params=params).json()
+            if act:
+                activities.extend(act)
+                start = start + limit
+            else:
+                break
+
+        return activities
+
+class ActivityDownloadFormat(Enum):
+    """
+    """
+
+    ORIGINAL = auto()
+    TCX = auto()
+    GPX = auto()
+    KML = auto()
+    CSV = auto()
+    
 
 class GarminConnectConnectionError(Exception):
     # TODO add description
