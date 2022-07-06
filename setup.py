@@ -24,5 +24,20 @@ with open("README.md") as readme_file:
 
 setup(
     author="Krzysztof Liszka",
-    author_email="krz.liszka@gmail.com"
+    author_email="krz.liszka@gmail.com",
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent"
+    ],
+    description="Python 3 API wrapper for Garmin Connect",
+    name="garminconnect",
+    keywords=["garmin connect", "api", "client"],
+    license="MIT license",
+    install_requires=["requests", "cloudscraper"],
+    long_description_content_type="text/markdown",
+    long_description=readme,
+    url="https://github.com/krzliszka/garmin-connect",
+    packages=["garminconnect"],
+    version="0.1.45"
 )
