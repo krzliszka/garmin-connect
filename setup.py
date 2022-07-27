@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import io
@@ -39,5 +39,5 @@ setup(
     long_description=readme,
     url="https://github.com/krzliszka/garmin-connect",
     packages=["garminconnect"],
-    version="0.1.45"
+    version="0.1.46"
 )
