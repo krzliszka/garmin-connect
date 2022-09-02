@@ -1,4 +1,5 @@
 import gzip
+import socket
 import ssl
 import json as json_lib
 
@@ -182,6 +183,47 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(response.status, 200)
 
     def test_should_not_follow_redirect_if_redirect_false(self):
-        pass
+        response = request(
+            "https://httpbingo.org/redirect-to",
+            params = {
+                "url": "https://duckduckgo.com/"
+            },
+            redirect=False
+        )
+        self.assertEqual(response.status, 302)
 
+    def test_cookies(self):
+        response = request(
+            "https://httpbingo.org/cookies/set",
+            params = {
+                "cookie": "test"
+            },
+            redirect = False
+        )
+        response = request(
+            "https://httpbingo.org/cookies", cookiejar=response.cookiejar
+        )
+        self.assertEqual(response.json["cookie"], "test")
+
+    def test_basic_auth(self):
+        response = request(
+            "http://httpbingo.org/basic-auth/user/passwd", basic_auth=("user", "passwd")
+        )
+        self.assertEqual(response.json["authorized"], True)
+
+    def test_should_handle_gzip(self):
+        response = request(
+            "http://httpbingo.org/gzip", headers={
+                "Accept-Encoding": "gzip"
+            }
+        )
+        self.assertEqual(response.json["gzipped"], True)
+
+    def test_should_timeout(self):
+        with self.assertRaises((TimeoutError, socket.timeout)):
+            response = request("http://httpbingo.org/delay/3", timeout=1)
+
+    def test_should_handle_head_requests(self):
+        response = request("http://httpbingo.org/head", method="HEAD")
+        self.assertTrue(response.content == b"")
     
