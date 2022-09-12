@@ -2,13 +2,21 @@
 import json
 import sys
 
-from random-workout.garmin import  GarminClient
-from random-workout.fartlek import create_fartlek_workout
+from fartlek.garmin import  GarminClient
+from fartlek.fartlek import create_fartlek_workout
 
 def parse_args(args):
     result = {
-        
+        a.split("=")[0]: int(a.split("=")[1])
+        if "=" in a and a.split("=")[1].isnumeric()
+        else a.split("=")[1]
+        if "=" in a
+        else True
+        for a in args
+        if "--" in a
     }
+    result["[]"] = [a for a in args if not a.startswith("--")]
+    return result
 
 def get_or_throw(d, key, error):
     try:
@@ -25,3 +33,14 @@ if __name__ == "__main__":
     if not "--dry-run" in args:
         username = get_or_throw(args, "--username", "The Garmin Connect --username value is required")
         password = get_or_throw(args, "--password", "The Garmin Connect --password value is required")
+
+    workout = create_fartlek_workout(duration, target_pace)
+
+    if '--dry-run' in args:
+        print(json.dumps(workout.json(), indent=2))
+    else:
+        client = GarminClient(username, password)
+        client.connect()
+        client.add_workout(workout)
+
+        print("Workout added. Check https://connect.garmin.com/modern/workouts")
