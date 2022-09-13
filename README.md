@@ -1,1 +1,3 @@
-### Garmin Connect API
+### Random workout
+
+# Generating new Fartlek workout
