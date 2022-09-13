@@ -28,15 +28,15 @@ if __name__ == "__main__":
     args = parse_args(sys.argv)
 
     duration = get_or_throw(args, "--duration", "The --duration value is required (format: MM:SS")
-    target_pace = get_or_throw(args, "--target-pace", "The --target-pace value is required (format: MM:SS - mins/km")
+    target_pace = get_or_throw(args, "--target_pace", "The --target_pace value is required (format: MM:SS - mins/km")
 
-    if not "--dry-run" in args:
+    if not "--dry_run" in args:
         username = get_or_throw(args, "--username", "The Garmin Connect --username value is required")
         password = get_or_throw(args, "--password", "The Garmin Connect --password value is required")
 
     workout = create_fartlek_workout(duration, target_pace)
 
-    if '--dry-run' in args:
+    if '--dry_run' in args:
         print(json.dumps(workout.json(), indent=2))
     else:
         client = GarminClient(username, password)
