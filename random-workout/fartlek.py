@@ -5,6 +5,9 @@ from .workout import Workout, WorkoutStep, Target
 
 
 def fartlek(target_time):
+    """
+    # TODO Fartlek - add some description
+    """
     target_seconds = mmss_to_seconds(target_time)
 
     if target_seconds >= 40 * 60:
